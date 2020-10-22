@@ -1,0 +1,99 @@
+﻿@model DJBlogs.Azure.Search.Models.SearchData
+@{ ViewData["Title"] = "Home Page"; }
+    <head>
+        <link rel="stylesheet" href="~/css/hotels.css" />
+        <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.css" type="text/css">
+        <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.js"></script>
+        <script type="text/javascript">
+            //Create an instance of the map control and set some options.
+            var map;
+            function initMap(myMap) {
+                map = new atlas.Map('myMap', {
+                    center: [-73.975403, 40.760586],
+                    zoom: 12,
+                    language: 'en-US',
+                    authOptions: {
+                        authType: 'subscriptionKey',
+                        subscriptionKey: '@DJBlogs.Azure.Search.Utility.AppConstant.MapSubscriptionKey' //'7EyhlDlAUJW1Ydy0-vAvTVM7aXMF9ZChvCGoboDUJzk'
+                    }
+                });
+                makemarker();
+            };
+            function addMarker(name, desc, lat, long) {
+                map.events.add('ready', function () {
+                    //Create a HTML marker and add it to the map.
+                    var marker = new atlas.HtmlMarker({
+                        color: 'DodgerBlue',
+                        text: 'H',
+                        position: [lat, long],
+                        popup: new atlas.Popup({
+                            content: '<div style="padding:10px;font-weight: bold;">' + name + '</div>',
+                            pixelOffset: [0, -30]
+                        })
+                    });
+                    map.markers.add(marker);
+                    //Add a click event to toggle the popup.
+                    map.events.add('click', marker, () => {
+                        marker.togglePopup();
+                    });
+                });
+            };
+            function makemarker() {
+                $(".location").each(function () {
+                    var name = $(this).attr("name");
+                    var description = $(this).attr("description");
+                    var lat = $(this).attr("lat");
+                    var long = $(this).attr("long");
+                    addMarker(name, description, lat, long)
+                });
+            }
+        </script>
+        <style>
+
+            #myMap {
+                height: 600px;
+                width: 100%;
+            }
+        </style>
+    </head>
+
+    <body onload="initMap('myMap')">
+        <h1 class="sampleTitle">
+            <img src="~/images/azure-logo.png" width="80" />
+            Hotels Search
+        </h1>
+        <div class="row">
+            <div class="col-md-7">
+                @using (Html.BeginForm("Index", "Home", FormMethod.Post))
+                {
+                    // Display the search text box, with the search icon to the right of it.
+            <div class="searchBoxForm">
+                @Html.TextBoxFor(m => m.searchText, new { @class = "searchBox" }) <input class="searchBoxSubmit" type="submit" value="">
+            </div>
+
+                            @if (Model != null)
+                            {
+                                // Show the result count.
+            <p class="sampleText">
+                @Model.resultList.TotalCount Results
+            </p> var results = Model.resultList.GetResults().ToList();
+
+            @for (var i = 0; i < results.Count; i++)
+            {
+                // Display the hotel name and description.
+            @Html.TextAreaFor(m => results[i].Document.HotelName, new { @class = "box1" })
+                                    @Html.TextArea($"desc{i}", results[i].Document.Description, new { @class = "box2" })
+                if (results[i].Document.Address != null)
+                {
+                                                            @Html.TextArea($"address{i}", string.Format("{0}, {1}, {2}", results[i].Document.Address.City, results[i].Document.Address.StateProvince, results[i].Document.Address.Country), new { @class = "box3" })
+                }
+                                                                                    <div class="location" name="@results[i].Document.HotelName" description="@results[i].Document.Description" lat="@results[i].Document.Location.coordinates[0]" long="@results[i].Document.Location.coordinates[1]"></div>}}}
+            </div>
+            <div class="col-md-5">
+                <div id="myMap"></div>
+            </div>
+        </div>
+      
+      
+       
+    </body>
